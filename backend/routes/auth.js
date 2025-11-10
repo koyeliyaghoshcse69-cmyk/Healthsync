@@ -15,12 +15,12 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body || {}
     if (!email || !password) return res.status(400).json({ error: 'email and password required' })
-
+    console.log(process.env.MONGODB_URI);
     const found = await findByEmail(email)
-    if (!found) return res.status(401).json({ error: 'invalid credentials' })
+    if (!found) return res.status(401).json({ error: 'Invalid credentials' })
 
     const ok = await bcrypt.compare(password, found.passwordHash)
-    if (!ok) return res.status(401).json({ error: 'invalid credentials' })
+    if (!ok) return res.status(401).json({ error: 'Invalid credentials' })
 
     const token = signToken(found)
     return res.json({ token, user: { id: found.id, email: found.email, role: found.role, profile: found.profile } })

@@ -20,6 +20,6 @@ export default defineConfig({
   ],
   server: {
     // Vite dev server port (keep separate from backend, which commonly runs on 3000)
-    port: 5173,
+    port: 3000,
   },
 })
