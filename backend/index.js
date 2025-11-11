@@ -12,6 +12,8 @@ const cors = require('cors')
 
 const authRouter = require('./routes/auth')
 const orgRouter = require('./routes/organizations')
+const icdRouter = require('./routes/icd11')
+const patientsRouter = require('./routes/patients')
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -21,6 +23,8 @@ app.use(express.json({ limit: '5mb' }))
 
 app.use('/api/auth', authRouter)
 app.use('/api/organizations', orgRouter)
+app.use('/api/icd11', icdRouter)
+app.use('/api/patients', patientsRouter)
 
 app.get('/health', (req, res) => res.json({ ok: true }))
 

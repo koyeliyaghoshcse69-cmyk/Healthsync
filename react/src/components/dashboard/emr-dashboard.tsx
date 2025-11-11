@@ -4,8 +4,12 @@ import { Card } from "@/components/ui/card"
 import StatCard from "./stat-card"
 import RecentPatients from "./recent-patients"
 import IntegrationStatus from "./integration-status"
+import { Button } from "../ui/button"
+import NewPatientModal from "./NewPatientModal"
+import { useState } from "react"
 
 export default function EMRDashboard() {
+  const [open, setOpen] = useState(false)
   return (
     <>
     <div className="p-6 space-y-6"> {/* max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 */}
@@ -54,12 +58,13 @@ export default function EMRDashboard() {
           <Card className="bg-card border-border p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
             <div className="space-y-2">
-              <button className="w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-                New Patient Record
-              </button>
-              <button className="w-full px-4 py-2 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors">
+          <Button className="w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors" onClick={() => setOpen(true)}>
+            New Patient Record
+          </Button>
+          <NewPatientModal open={open} onClose={() => setOpen(false)} />
+              <Button className="w-full px-4 py-2 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors">
                 Add Diagnosis
-              </button>
+              </Button>
               <button className="w-full px-4 py-2 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-card transition-colors">
                 View Reports
               </button>
