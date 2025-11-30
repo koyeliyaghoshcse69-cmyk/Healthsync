@@ -1,5 +1,5 @@
 "use client"
-import { Activity, Users, CheckCircle2, Pill } from "lucide-react"
+import { Activity, Users, CheckCircle2, Pill, Plus } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import StatCard from "./stat-card"
 import RecentPatients from "./recent-patients"
@@ -250,13 +250,23 @@ export default function EMRDashboard() {
 
         <div>
           <Card className="bg-card border-border p-4">
-            <h3 className="text-lg font-semibold mb-3">Organization Patients</h3>
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-lg font-semibold leading-tight">Organization Patients</h3>
+              <Button
+                size="sm"
+                onClick={() => { setOpen(true); setShowAllPatients(true) }}
+                title="Create new patient"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-md shadow-sm hover:shadow-md transition-shadow"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">New Patient</span>
+              </Button>
+            </div>
             <div className="mb-3 flex items-center justify-between gap-2">
               <div className="flex-1">
                 <input value={patientSearch} onChange={(e) => setPatientSearch(e.target.value)} placeholder="Search patients by name, id, or doctor" className="w-full px-3 py-2 rounded-md border border-border bg-input text-sm" />
               </div>
               <div className="flex items-center gap-2">
-                <Button size="sm" onClick={() => { setOpen(true); setShowAllPatients(true) }}>New Patient</Button>
                 <button className="px-3 py-2 rounded-md border border-border bg-card" onClick={() => { setShowAllPatients(s => !s) }}>{showAllPatients ? 'Hide table' : 'Show table'}</button>
               </div>
             </div>

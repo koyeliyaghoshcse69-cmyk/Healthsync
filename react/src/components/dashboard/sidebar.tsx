@@ -32,7 +32,6 @@ const menuItems = [
   { href: "/dashboard/icd11", label: "ICD-11 Codes", icon: BookOpen },
   { href: "/dashboard/patients", label: "Patients", icon: Users },
   { href: "/dashboard/namaste", label: "NAMASTE", icon: Stethoscope },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ]
 
 export default function Sidebar({ open, onToggle }: SidebarProps) {
@@ -85,6 +84,19 @@ export default function Sidebar({ open, onToggle }: SidebarProps) {
               </Button>
             </Link>
           )}
+          <Link to="/dashboard/settings" onClick={onToggle}>
+                <Button
+                  variant={pathname === '/dashboard/settings' ? "default" : "ghost"}
+                  className={`w-full justify-start gap-3 ${
+                    pathname === '/dashboard/settings'
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/10"
+                  }`}
+                >
+                  <Settings className="w-5 h-5" />
+                  <span>Settings</span>
+                </Button>
+              </Link>
         </nav>
         <div className="p-4">
           
@@ -148,6 +160,19 @@ export default function Sidebar({ open, onToggle }: SidebarProps) {
                   </Button>
                 </Link>
               )}
+              <Link to="/dashboard/settings" onClick={onToggle}>
+                <Button
+                  variant={pathname === '/dashboard/settings' ? "default" : "ghost"}
+                  className={`w-full justify-start gap-3 ${
+                    pathname === '/dashboard/settings'
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/10"
+                  }`}
+                >
+                  <Settings className="w-5 h-5" />
+                  <span>Settings</span>
+                </Button>
+              </Link>
             </nav>
             <div className="p-4">
               <LogoutButton />
