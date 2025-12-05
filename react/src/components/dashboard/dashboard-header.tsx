@@ -1,7 +1,7 @@
 "use client"
 
 import { Link } from "react-router-dom"
-import { Menu, Search, ChevronDown, User, Settings } from "lucide-react"
+import { Menu, Search, Settings } from "lucide-react"
 import ThemeToggle from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -207,7 +207,7 @@ export default function Header({ onSidebarToggle }: HeaderProps) {
           >
             <span>
               {getUserInitials(
-                (user?.profile as any)?.name || user?.name, 
+                (user?.profile as any)?.name, 
                 user?.email, 
                 user?.role, 
                 (user?.profile as any)?.admin
@@ -223,7 +223,7 @@ export default function Header({ onSidebarToggle }: HeaderProps) {
                   <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold">
                     <span>
                       {getUserInitials(
-                        (user?.profile as any)?.name || user?.name, 
+                        (user?.profile as any)?.name ||, 
                         user?.email, 
                         user?.role, 
                         (user?.profile as any)?.admin
@@ -234,7 +234,7 @@ export default function Header({ onSidebarToggle }: HeaderProps) {
                     <div className="font-medium text-foreground truncate">
                       {user?.role === 'organization' 
                         ? (user?.profile as any)?.admin || 'Admin Unknown'
-                        : (user?.profile as any)?.name || user?.name || 'Dr. Unknown'
+                        : (user?.profile as any)?.name || 'Dr. Unknown'
                       }
                     </div>
                     <div className="text-sm text-muted-foreground truncate">

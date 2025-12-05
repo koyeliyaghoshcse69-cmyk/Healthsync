@@ -6,7 +6,7 @@ import { motion } from "framer-motion"
 
 import { useRef, useState, useEffect } from "react"
 import { Card } from "./ui/card"
-import DarkVeil from "./reactBit"
+// import DarkVeil from "./reactBit"
 
 const features = [
   {
@@ -146,23 +146,23 @@ export function Hero() {
     }
   }
 
-  function convertToFHIR(diagnosis: any) {
-    const fhir = {
-      resourceType: 'Condition',
-      id: `cond-${diagnosis.id}`,
-      clinicalStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-clinical', code: 'active' }] },
-      verificationStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-ver-status', code: 'confirmed' }] },
-      code: {
-        coding: [
-          { system: 'http://who.int/icd', code: diagnosis.icd, display: diagnosis.title },
-        ],
-        text: diagnosis.title,
-      },
-      subject: { reference: 'Patient/sample-patient', display: 'Sample Patient' },
-      onsetDateTime: new Date().toISOString(),
-    }
-    return fhir
-  }
+  // function convertToFHIR(diagnosis: any) {
+  //   const fhir = {
+  //     resourceType: 'Condition',
+  //     id: `cond-${diagnosis.id}`,
+  //     clinicalStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-clinical', code: 'active' }] },
+  //     verificationStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-ver-status', code: 'confirmed' }] },
+  //     code: {
+  //       coding: [
+  //         { system: 'http://who.int/icd', code: diagnosis.icd, display: diagnosis.title },
+  //       ],
+  //       text: diagnosis.title,
+  //     },
+  //     subject: { reference: 'Patient/sample-patient', display: 'Sample Patient' },
+  //     onsetDateTime: new Date().toISOString(),
+  //   }
+  //   return fhir
+  // }
 
   async function handleSave() {
     if (!selected) return
