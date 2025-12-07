@@ -19,7 +19,8 @@ export default function AuthGuard({ children }: PropsWithChildren) {
         }
 
         // Validate token server-side
-        const res = await fetch('/api/auth/me', {
+        const API_BASE = (import.meta.env.VITE_API_URL as string) || 'http://localhost:4000'
+        const res = await fetch(`${API_BASE}/api/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (!res.ok) {
