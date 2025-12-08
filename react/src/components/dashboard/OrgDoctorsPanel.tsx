@@ -154,7 +154,6 @@ export default function OrgDoctorsPanel({ orgId }: { orgId: string | null }) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-foreground">Doctors</h3>
-          <p className="text-sm text-muted-foreground">View doctors and quick stats for your organization</p>
         </div>
         <div className="flex items-center gap-2">
           {/* New Patient button moved to Organization Patients table in EMR dashboard */}
@@ -377,7 +376,7 @@ export default function OrgDoctorsPanel({ orgId }: { orgId: string | null }) {
                       </div>
                       <div>
                         <div className="text-xs text-muted-foreground">Recent</div>
-                        <div className="mt-2 space-y-2 max-h-64 overflow-auto">
+                        <div className="mt-2 space-y-2 max-h-64 overflow-y-scroll" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
                           {(doc.diagnoses || []).slice(0, 10).map((r) => (
                             <div
                               key={r.id}

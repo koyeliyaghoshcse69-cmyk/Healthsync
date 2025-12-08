@@ -210,4 +210,128 @@ router.post('/google', async (req, res) => {
     return res.status(500).json({ error: 'google sign-in failed' })
   }
 })
+
+// Forgot password - Send OTP
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body || {}
+    if (!email) return res.status(400).json({ error: 'email required' })
+
+    // Check if user exists
+    const user = await findByEmail(email)
+    if (!user) {
+      // Don't reveal if email exists or not for security
+      return res.json({ message: 'If the email exists, an OTP has been sent' })
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+
+    // Save OTP to database
+    const db = await getDb()
+    if (db) {
+      await db.collection('password_resets').insertOne({
+        email,
+        otp,
+        expiresAt: otpExpiry,
+        createdAt: new Date(),
+        used: false
+      })
+    }
+
+    // Send email with OTP
+    const nodemailer = require('nodemailer')
+    
+    // Configure email transporter
+    console.log('EMAIL_USER:', process.env.EMAIL_USER);
+    console.log('EMAIL_PASSWORD:', process.env.EMAIL_PASSWORD);
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD
+      }
+    })
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'noreply@healthsync.com',
+      to: email,
+      subject: 'HealthSync - Password Reset OTP',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #0ea5e9;">HealthSync Password Reset</h2>
+          <p>You requested to reset your password. Use the following OTP to proceed:</p>
+          <div style="background-color: #f3f4f6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+            <h1 style="color: #0ea5e9; font-size: 32px; letter-spacing: 8px; margin: 0;">${otp}</h1>
+          </div>
+          <p>This OTP will expire in <strong>10 minutes</strong>.</p>
+          <p>If you didn't request this, please ignore this email.</p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+          <p style="color: #6b7280; font-size: 12px;">This is an automated message from HealthSync. Please do not reply to this email.</p>
+        </div>
+      `
+    }
+
+    await transporter.sendMail(mailOptions)
+    console.log(`OTP sent to ${email}: ${otp}`)
+
+    return res.json({ message: 'If the email exists, an OTP has been sent' })
+  } catch (err) {
+    console.error('forgot password error', err)
+    return res.status(500).json({ error: 'failed to process request' })
+  }
+})
+
+// Verify OTP and reset password
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body || {}
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ error: 'email, otp, and newPassword required' })
+    }
+
+    const db = await getDb()
+    if (!db) return res.status(503).json({ error: 'database unavailable' })
+
+    // Find valid OTP
+    const resetRequest = await db.collection('password_resets').findOne({
+      email,
+      otp,
+      used: false,
+      expiresAt: { $gt: new Date() }
+    })
+
+    if (!resetRequest) {
+      return res.status(400).json({ error: 'Invalid or expired OTP' })
+    }
+
+    // Get user
+    const user = await findByEmail(email)
+    if (!user) return res.status(404).json({ error: 'User not found' })
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(newPassword, 10)
+
+    // Update password
+    await db.collection('users').updateOne(
+      { email },
+      { $set: { passwordHash, updatedAt: new Date() } }
+    )
+
+    // Mark OTP as used
+    await db.collection('password_resets').updateOne(
+      { _id: resetRequest._id },
+      { $set: { used: true, usedAt: new Date() } }
+    )
+
+    console.log(`Password reset successful for ${email}`)
+
+    return res.json({ message: 'Password reset successful' })
+  } catch (err) {
+    console.error('reset password error', err)
+    return res.status(500).json({ error: 'failed to reset password' })
+  }
+})
+
 module.exports = router

@@ -16,6 +16,7 @@ export const SocketProvider = ({ children, token }: SocketProviderProps) => {
     if (!token) {
       // No token, disconnect if connected
       if (socket) {
+        console.log('🔌 Disconnecting socket due to no token')
         socket.disconnect()
         setSocket(null)
         setIsConnected(false)
@@ -61,6 +62,7 @@ export const SocketProvider = ({ children, token }: SocketProviderProps) => {
     // Cleanup on unmount or when token changes
     return () => {
       if (newSocket) {
+        console.log('🔌 Cleaning up socket connection')
         newSocket.disconnect()
       }
     }

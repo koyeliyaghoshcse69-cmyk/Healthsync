@@ -1,5 +1,5 @@
 "use client"
-import { Plus } from "lucide-react"
+import { Plus, Users, UserCheck, UserX, Activity, Search, Calendar } from "lucide-react"
 import { Card } from "@/components/ui/card"
 // import StatCard from "./stat-card"
 import RecentPatients from "./recent-patients"
@@ -12,6 +12,7 @@ import AddDiagnosisModal from "./AddDiagnosisModal"
 // import ReportsModal from "./ReportsModal"
 import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth"
+import { useSocket } from "@/lib/socketContext"
 
 export default function EMRDashboard() {
   const { user, authFetch } = useAuth()
@@ -29,8 +30,10 @@ export default function EMRDashboard() {
   const [assignPatient, setAssignPatient] = useState<{ id: string; name?: string } | null>(null)
   const [assignDoctorId, setAssignDoctorId] = useState<string | undefined>(undefined)
   const [assigning, setAssigning] = useState(false)
+  const [connectedDoctors, setConnectedDoctors] = useState<string[]>([])
 
   const role = user?.role || 'doctor'
+  const { socket } = useSocket()
 
   // drag ele helper
   function createDragPreview(name?: string, meta?: string) {
@@ -91,18 +94,15 @@ export default function EMRDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Main content area */}
           <div className="lg:col-span-3 space-y-6">
             <RecentPatients />
             <IntegrationStatus />
           </div>
 
-          {/* Side panel for recently assigned patients */}
           <div className="lg:col-span-1">
             <div className="sticky top-6">
               <RecentlyAssignedPanel 
                 onWriteDiagnosis={(patientId) => {
-                  // Open diagnosis modal with pre-selected patient
                   setSelectedPatientForDiag(patientId)
                   setAddDiagOpen(true)
                 }}
@@ -122,16 +122,39 @@ export default function EMRDashboard() {
         onAdded={() => {
           setAddDiagOpen(false)
           setSelectedPatientForDiag(undefined)
-          // Patient will be removed via socket event 'patient:diagnosis-added'
         }}
         preSelectedPatientId={selectedPatientForDiag}
       />
     </>
   )
 
-  // Organization view: list doctors and their details
   type UserProfile = { organizationId?: string | null } | undefined
   const orgId = (user?.profile as UserProfile)?.organizationId ?? null
+  
+  useEffect(() => {
+    if (!socket || role !== 'organization') {
+      console.log('Socket not available or user is not organization:', { socket: !!socket, role })
+      return
+    }
+    
+    
+    socket.emit('get:connected-users')
+
+    const handleConnectedUsers = (data: { users: string[] }) => setConnectedDoctors(data.users || [])
+
+    socket.on('connected:users', handleConnectedUsers)
+
+    // Request updates periodically
+    const interval = setInterval(() => {
+      socket.emit('get:connected-users')
+    }, 10000) // Every 10 seconds
+
+    return () => {
+      socket.off('connected:users', handleConnectedUsers)
+      clearInterval(interval)
+    }
+  }, [socket, role])
+
   async function loadOrgData() {
     if (!orgId) return
     try {
@@ -221,45 +244,115 @@ export default function EMRDashboard() {
   }, [])
   const OrgView = (
     <>
-      <div className=" space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Organization Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Overview across your organization</p>
+      <div className="space-y-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-clip-text ">Organization Dashboard</h1>
+            <p className="text-muted-foreground mt-2">Manage doctors, patients, and assignments across your organization</p>
+          </div>
         </div>
 
-        <div>
-          <Card className="bg-card border-border p-4">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-lg font-semibold leading-tight">Organization Patients</h3>
-              <Button
-                size="sm"
-                onClick={() => { setOpen(true); setShowAllPatients(true) }}
-                title="Create new patient"
-                className="flex items-center gap-2 px-3 py-1.5 rounded-md shadow-sm hover:shadow-md transition-shadow"
-              >
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">New Patient</span>
-              </Button>
-            </div>
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <div className="flex-1">
-                <input value={patientSearch} onChange={(e) => setPatientSearch(e.target.value)} placeholder="Search patients by name, id, or doctor" className="w-full px-3 py-2 rounded-md border border-border bg-input text-sm" />
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="p-6 bg-linear-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200/50 dark:border-blue-800/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Total Patients</p>
+                <p className="text-3xl font-bold text-blue-700 dark:text-blue-300 mt-2">{orgPatients.length}</p>
               </div>
-              <div className="flex items-center gap-2">
-                <button className="px-3 py-2 rounded-md border border-border bg-card" onClick={() => { setShowAllPatients(s => !s) }}>{showAllPatients ? 'Hide table' : 'Show table'}</button>
+              <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-linear-to-br from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20 border-green-200/50 dark:border-green-800/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-600 dark:text-green-400">Assigned</p>
+                <p className="text-3xl font-bold text-green-700 dark:text-green-300 mt-2">{orgPatients.filter(p => p.createdBy).length}</p>
+              </div>
+              <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center">
+                <UserCheck className="w-6 h-6 text-green-600 dark:text-green-400" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-linear-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20 border-amber-200/50 dark:border-amber-800/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-amber-600 dark:text-amber-400">Unassigned</p>
+                <p className="text-3xl font-bold text-amber-700 dark:text-amber-300 mt-2">{orgPatients.filter(p => !p.createdBy).length}</p>
+              </div>
+              <div className="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                <UserX className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-linear-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 border-purple-200/50 dark:border-purple-800/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-purple-600 dark:text-purple-400">Active Doctors</p>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <p className="text-3xl font-bold text-purple-700 dark:text-purple-300">{connectedDoctors.length - 1}</p>
+                  <span className="text-sm text-purple-500 dark:text-purple-400">/ {doctorList.length}</span>
+                </div>
+              </div>
+              <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                <Activity className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Patients Table Section */}
+        <div>
+          <Card className="bg-card border-border shadow-lg">
+            <div className="p-6 border-b border-border">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-xl font-bold text-foreground">Patient Directory</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { setOpen(true); setShowAllPatients(true) }}
+                    className="p-2 rounded-lg border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+                    title="Add New Patient"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => { setShowAllPatients(s => !s) }}
+                    className="px-4 py-2 rounded-lg border border-border bg-accent/50 hover:bg-accent transition-colors text-sm font-medium"
+                  >
+                    {showAllPatients ? 'Hide Details' : 'Show Details'}
+                  </button>
+                </div>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  value={patientSearch}
+                  onChange={(e) => setPatientSearch(e.target.value)}
+                  placeholder="Search by patient name, ID, or assigned doctor..."
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                />
               </div>
             </div>
             <NewPatientModal open={open} onClose={() => setOpen(false)} orgId={orgId} onCreated={async () => { await loadOrgData(); setShowAllPatients(true) }} />
-            <div id="org-patients-table" className={`overflow-auto ${showAllPatients ? 'block' : 'hidden'}`}>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs text-muted-foreground">
-                    <th className="py-2 px-2">Patient</th>
-                    <th className="py-2 px-2">Age</th>
-                    <th className="py-2 px-2">Assigned To</th>
-                    <th className="py-2 px-2">Created</th>
-                  </tr>
-                </thead>
+            <div id="org-patients-table" className={`${showAllPatients ? 'block' : 'hidden'}`}>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/30">
+                      <th className="py-4 px-6 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Patient</th>
+                      <th className="py-4 px-6 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Age</th>
+                      <th className="py-4 px-6 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Assigned To</th>
+                      <th className="py-4 px-6 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Created</th>
+                      <th className="py-4 px-6 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
                 <tbody>
                   {orgPatients
                     .filter(pp => {
@@ -271,7 +364,7 @@ export default function EMRDashboard() {
                     .map(p => (
                     <tr
                       key={p.id}
-                      className="border-t hover:bg-accent/5 cursor-grab"
+                      className="border-b border-border/50 hover:bg-accent/30 cursor-grab transition-colors group"
                       draggable
                       onDragStart={(e) => {
                         try {
@@ -292,28 +385,59 @@ export default function EMRDashboard() {
                         } catch (err) { console.debug('clean drag preview failed', err) }
                       }}
                     >
-                      <td className="py-2 px-2 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-sm">{(p.name || p.id || '').slice(0,2).toUpperCase()}</div>
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold truncate">{p.name || p.id}</div>
-                          <div className="text-xs text-muted-foreground truncate">{
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center font-bold text-sm text-primary">{(p.name || p.id || '').slice(0,2).toUpperCase()}</div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-foreground truncate">{p.name || p.id}</div>
+                            <div className="text-xs text-muted-foreground truncate">{
                             // Prefer latest diagnosis -> patient.disease -> placeholder
                             (latestByPatient[p.id] && (latestByPatient[p.id]?.disease || latestByPatient[p.id]?.icd11))
                               ? `${latestByPatient[p.id]?.disease ? latestByPatient[p.id]?.disease : ''}${latestByPatient[p.id]?.icd11 ? ` (${latestByPatient[p.id]?.icd11})` : ''}`.trim()
                               : (p.hasOwnProperty('disease') && (p as any).disease ? (p as any).disease : '—')
                           }</div>
+                          </div>
                         </div>
                       </td>
-                      <td className="py-2 px-2">{p.age ?? '—'}</td>
-                      <td className="py-2 px-2">{p.createdBy ? (doctorMap[p.createdBy]?.name || doctorMap[p.createdBy]?.email || p.createdBy) : 'Unassigned'}</td>
-                      <td className="py-2 px-2">{p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'}</td>
-                      <td className="py-2 px-2 text-right">
-                        <button className="px-2 py-1 text-sm rounded-md border border-border bg-card" onClick={() => { setAssignPatient({ id: p.id, name: p.name }); setAssignDoctorId(p.createdBy); setAssignOpen(true) }}>Assign</button>
+                      <td className="py-4 px-6">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium">
+                          {p.age ?? '—'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6">
+                        {p.createdBy ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                              <UserCheck className="w-3 h-3 text-green-600 dark:text-green-400" />
+                            </div>
+                            <span className="text-sm font-medium text-foreground">{doctorMap[p.createdBy]?.name || doctorMap[p.createdBy]?.email || p.createdBy}</span>
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                            <UserX className="w-3 h-3" />
+                            Unassigned
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="w-4 h-4" />
+                          {p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                        </div>
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        <button
+                          className="px-4 py-2 text-sm font-medium rounded-lg border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+                          onClick={() => { setAssignPatient({ id: p.id, name: p.name }); setAssignDoctorId(p.createdBy); setAssignOpen(true) }}
+                        >
+                          Assign
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </Card>
         </div>

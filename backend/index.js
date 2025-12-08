@@ -18,6 +18,7 @@ const orgRouter = require('./routes/organizations')
 const icdRouter = require('./routes/icd11')
 const patientsRouter = require('./routes/patients')
 const notificationsRouter = require('./routes/notifications')
+const groqRouter = require('./routes/groq')
 
 const app = express()
 const server = http.createServer(app)
@@ -80,6 +81,11 @@ if (ENABLE_SOCKETS) {
     socket.on('disconnect', () => {
       console.log(`User disconnected: ${socket.userId}`)
       userSockets.delete(socket.userId)
+      
+      // Broadcast updated connected users list
+      const connectedUserIds = Array.from(userSockets.keys())
+      console.log(`📡 Broadcasting updated connected users (${connectedUserIds.length} users):`, connectedUserIds)
+      io.emit('connected:users', { users: connectedUserIds })
     })
 
     // Handle patient assignment notification (emitted from API routes)
@@ -87,6 +93,23 @@ if (ENABLE_SOCKETS) {
       // This is handled by the API route, but we listen for confirmation
       socket.emit('patient:assigned:ack', { success: true })
     })
+
+    // Handle request for connected users list (for organization dashboard)
+    socket.on('get:connected-users', () => {
+      if (socket.userRole === 'organization') {
+        const connectedUserIds = Array.from(userSockets.keys())
+        socket.emit('connected:users', { users: connectedUserIds })
+      }
+    })
+
+    // Broadcast when a user connects/disconnects (for real-time updates)
+    const broadcastConnectedUsers = () => {
+      const connectedUserIds = Array.from(userSockets.keys())
+      io.emit('connected:users', { users: connectedUserIds })
+    }
+    
+    // Broadcast after a short delay to let the connection stabilize
+    setTimeout(broadcastConnectedUsers, 500)
   })
 } else { 
   console.log('⚠️ Socket.IO disabled - Running in serverless mode (notifications saved to DB only)')
@@ -110,6 +133,7 @@ app.use('/api/organizations', orgRouter)
 app.use('/api/icd11', icdRouter)
 app.use('/api/patients', patientsRouter)
 app.use('/api/notifications', notificationsRouter)
+app.use('/api/groq', groqRouter)
 
 // Health check endpoint for Render and keep-alive pings
 app.get('/health', (req, res) => {

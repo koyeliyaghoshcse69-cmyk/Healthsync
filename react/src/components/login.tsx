@@ -296,8 +296,8 @@ export function Login() {
 								<div className="space-y-2">
 									<div className="flex items-center justify-between">
 										<label className="text-sm font-medium text-foreground">Password</label>
-										<Link to="/forgot" className="text-sm text-primary underline-offset-2 hover:underline font-medium">
-											Forgot?
+										<Link to="/forgot-password" className="text-sm text-primary underline-offset-2 hover:underline font-medium">
+											Forgot password?
 										</Link>
 									</div>
 									<Input

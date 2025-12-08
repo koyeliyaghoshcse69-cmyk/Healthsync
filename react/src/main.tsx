@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import Home from './components/pages/home'
 import Login from './components/login'
 import Signup from './components/signup'
+import ForgotPassword from './components/forgot-password'
 import DashboardLayout from './components/dashboard/DashboardLayout'
 import AuthGuard from './components/auth-guard'
 import EMRDashboard from './components/dashboard/emr-dashboard'
@@ -35,7 +36,18 @@ function NavigationWatcher() {
 // Helper component to provide socket with token
 function AppWithSocket({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
-  const token = localStorage.getItem('hs_token') || sessionStorage.getItem('hs_token')
+  const [token, setToken] = React.useState<string | null>(null)
+  
+  // Update token when user changes
+  React.useEffect(() => {
+    if (user) {
+      const storedToken = localStorage.getItem('hs_token') || sessionStorage.getItem('hs_token')
+      setToken(storedToken)
+    } else {
+      // User is null (logged out), clear token
+      setToken(null)
+    }
+  }, [user])
   
   // Re-render when user changes (login/logout)
   return <SocketProvider token={token} key={user?.id || 'anonymous'}>{children}</SocketProvider>
@@ -51,6 +63,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
             <Route path="/dashboard" element={<AuthGuard><DashboardLayout /></AuthGuard>}>
               <Route index element={<EMRDashboard />} />
