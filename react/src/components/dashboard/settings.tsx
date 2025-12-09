@@ -188,11 +188,6 @@ export default function SettingsPage() {
     debouncedUpdate({ specialty: value })
   }
 
-  const handleOrganisationChange = (value: string) => {
-    setOrganisation(value)
-    debouncedUpdate({ organizationId: value })
-  }
-
   // Manual save button handler (shows success/error messages)
   const handleSaveClick = () => {
     if (debounceTimerRef.current) {

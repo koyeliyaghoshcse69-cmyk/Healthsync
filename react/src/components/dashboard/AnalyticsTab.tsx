@@ -106,8 +106,8 @@ export default function AnalyticsTab({ orgId }: { orgId: string | null }) {
     // Monthly trend
     const monthlyDiagnosis = new Map<string, number>()
     finalDiagnosis.forEach(d => {
-      if (!d.createdAt) return
-      const date = new Date(d.createdAt)
+      if (!d?.createdAt) return
+      const date = new Date(d?.createdAt)
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
       monthlyDiagnosis.set(key, (monthlyDiagnosis.get(key) || 0) + 1)
     })
