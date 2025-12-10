@@ -17,6 +17,7 @@ import { SocketProvider } from '@/lib/socket'
 import { wakeUpOnPageLoad } from '@/lib/keepAlive'
 import './index.css'
 import { useAuth } from '@/lib/auth'
+import About from './components/pages/about'
 
 // Wake up Render backend on initial page load
 wakeUpOnPageLoad()
@@ -63,6 +64,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/about" element={<About />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
             <Route path="/dashboard" element={<AuthGuard><DashboardLayout /></AuthGuard>}>
