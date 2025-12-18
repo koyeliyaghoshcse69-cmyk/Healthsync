@@ -30,13 +30,17 @@ type ICDDetail = {
 	clinicalNotes?: string[]
 }
 
+type Author = {
+	name: string
+}
+
 type ResearchPaper = {
 	title: string
 	link: string
 	snippet: string
 	publication: string
 	citedBy: number
-	authors: string[]
+	authors: (string | Author)[]
 	year: string
 }
 
