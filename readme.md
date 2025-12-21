@@ -7,40 +7,38 @@
 
 ## ✨ Features
 
-### 🎯 Core Capabilities
-
-- **🔐 Multi-Role Authentication System**
+- **Multi-Role Authentication System**
   - Secure JWT-based authentication
   - Role-based access control (Organizations & Doctors)
   - Session management with auto-keep-alive
 
-- **📊 Intelligent Patient Management**
+- **Intelligent Patient Management**
   - Create and manage patient records
   - ICD-11 disease code integration via WHO Clinical Tables API
   - Real-time patient assignment to doctors
   - Comprehensive diagnosis tracking with history
 
-- **🔄 Real-Time Collaboration**
+- **Real-Time Collaboration**
   - Socket.IO powered live updates
   - Instant patient assignment notifications
   - Connected doctors status monitoring
   - Live dashboard synchronization
 
-- **🤖 AI-Powered Medical Insights**
+- **Research-powered Medical Insights**
+  - Direct access to relevant research papers via SerpaAI when searching diseases
   - Groq API integration for disease information
   - Automated medical knowledge retrieval
   - Comprehensive disease data including symptoms, treatments, and prognosis
   - Evidence-based medical information
-  - Direct access to relevant research papers via SerpaAI when searching diseases
   - Instant academic literature retrieval for any disease or condition
 
-- **📈 Advanced Analytics Dashboard**
+- **Advanced Analytics Dashboard**
   - Organization-wide patient statistics
   - Visual data representation with interactive charts
   - Recent patients and diagnosis tracking
   - Doctor availability monitoring
 
-- **🎨 Modern User Interface**
+- **Modern User Interface**
   - Responsive design with Tailwind CSS v4
   - Dark mode support with animated transitions
   - Smooth animations powered by Framer Motion & GSAP
@@ -48,9 +46,6 @@
 
 
 ## 🏗️ Architecture
-
-### Monorepo Structure
-
 
 ```
 └── akankshrakesh-healthsync-react/
@@ -160,7 +155,6 @@
 - **AI Integration:** Groq API
 - **External APIs:** WHO ICD-11 Clinical Tables + SerpaAI for research papers
 
----
 
 ## 😼 Quick Start
 
@@ -174,7 +168,7 @@
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/AkankshRakesh/healthsync-react
    cd HealthSync-React
    ```
 
@@ -197,17 +191,17 @@
    Create `.env` in the `backend/` directory:
    ```env
    # Database
-   MONGODB_URI=mongodb://localhost:27017
+   MONGODB_URI=mongodb-uri
    MONGODB_DB=healthsync
    
    # Authentication
-   JWT_SECRET=your-super-secret-jwt-key
+   JWT_SECRET=your-jwt-key
    
    # Server
    PORT=4000
    FRONTEND_URL=http://localhost:3000
    
-   # Features
+   # To switch between socket and socket-less
    ENABLE_SOCKETS=true
    
    # AI Integration (Optional)
@@ -238,7 +232,6 @@
    - Frontend: `http://localhost:3000`
    - Backend API: `http://localhost:4000`
 
----
 
 ## 🎓 Usage Guide
 
@@ -263,48 +256,54 @@
 ## 🔌 API Endpoints
 
 ### Authentication
-```
-POST   /api/auth/signup      # Create new account
-POST   /api/auth/login       # Authenticate user
-GET    /api/auth/me          # Get current user
-POST   /api/auth/logout      # Logout user
-POST   /api/auth/forgot-password    # Password recovery
-POST   /api/auth/reset-password     # Reset password
-```
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/api/auth/signup` | Create new account (Doctor/Organization) | ❌ |
+| `POST` | `/api/auth/login` | Authenticate user and receive JWT token | ❌ |
+| `GET` | `/api/auth/me` | Get current authenticated user profile | ✅ |
+| `POST` | `/api/auth/logout` | Logout user and invalidate session | ✅ |
+| `POST` | `/api/auth/forgot-password` | Request password recovery email | ❌ |
+| `POST` | `/api/auth/reset-password` | Reset password with recovery token | ❌ |
 
 ### Patients
-```
-POST   /api/patients         # Create patient
-GET    /api/patients         # List patients
-GET    /api/patients/:id     # Get patient details
-PUT    /api/patients/:id     # Update patient
-DELETE /api/patients/:id     # Delete patient
-GET    /api/patients/diagnosis      # Get all diagnoses
-POST   /api/patients/:id/diagnosis  # Add diagnosis
-```
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/api/patients` | Create new patient record | ✅ |
+| `GET` | `/api/patients` | List all patients (filtered by role) | ✅ |
+| `GET` | `/api/patients/:id` | Get detailed patient information | ✅ |
+| `PUT` | `/api/patients/:id` | Update patient information | ✅ |
+| `DELETE` | `/api/patients/:id` | Delete patient record | ✅ |
+| `GET` | `/api/patients/diagnosis` | Get all diagnoses across patients | ✅ |
+| `POST` | `/api/patients/:id/diagnosis` | Add ICD-11 diagnosis to patient | ✅ |
 
 ### Organizations
-```
-GET    /api/organizations              # List organizations
-GET    /api/organizations/:id/doctors  # Get organization doctors
-POST   /api/organizations/:id/assign   # Assign patient to doctor
-```
 
-### ICD-11
-```
-GET    /api/icd11/search     # Search disease codes
-```
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `GET` | `/api/organizations` | List all organizations in system | ✅ |
+| `GET` | `/api/organizations/:id/doctors` | Get all doctors in organization | ✅ |
+| `POST` | `/api/organizations/:id/assign` | Assign patient to doctor (real-time notification) | ✅ |
+
+### ICD-11 Disease Classification
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `GET` | `/api/icd11/search` | Search WHO ICD-11 disease codes by query | ✅ |
 
 ### Medical Insights
-```
-POST   /api/groq/disease-info         # Get AI-powered disease info + research papers
-POST   /api/groq/diagnosis-summary    # Generate diagnosis summary
-```
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/api/groq/disease-info` | Get AI-powered disease info + research papers via SerpaAI | ✅ |
+| `POST` | `/api/groq/diagnosis-summary` | Generate comprehensive diagnosis summary | ✅ |
 
 ### Notifications
-```
-GET    /api/notifications     # Get user notifications
-```
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `GET` | `/api/notifications` | Get user notifications (patient assignments, updates) | ✅ |
 
 
 ## 🔐 Security Features
@@ -317,24 +316,6 @@ GET    /api/notifications     # Get user notifications
 - **Real-time Authentication:** Socket.IO middleware verification
 
 
-## 🎨 UI Features
-
-### Themes
-- **Light Mode:** Clean, professional medical interface
-- **Dark Mode:** Eye-friendly with animated veil effect
-- **Smooth Transitions:** Powered by Framer Motion
-
-### Responsive Design
-- Mobile-first approach
-- Tablet optimization
-- Desktop-optimized layouts
-- Touch-friendly interfaces
-
-### Accessibility
-- Radix UI primitives for WCAG compliance
-- Keyboard navigation support
-- Screen reader friendly
-- High contrast mode compatible
 
 
 ## 📦 Deployment
@@ -357,12 +338,12 @@ npm start
 ```
 
 ### Environment Checklist
-- ✅ Set `MONGODB_URI` to production database
-- ✅ Generate strong `JWT_SECRET`
-- ✅ Configure `FRONTEND_URL` for CORS
-- ✅ Enable `ENABLE_SOCKETS` for real-time features
-- ✅ Add `GROQ_API_KEY` for AI features
-
+- Set `MONGODB_URI` to production database
+- Generate strong `JWT_SECRET`
+- Configure `FRONTEND_URL` for CORS
+- Enable `ENABLE_SOCKETS` for real-time features
+- Add `GROQ_API_KEY` for ICD-11 data
+- Add `SERPAPI_KEY` for reasearch papers on diseases
 
 ## 🧪 Development
 
