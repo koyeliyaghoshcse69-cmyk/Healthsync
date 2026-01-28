@@ -3,8 +3,9 @@ import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth"
 import { Card } from "@/components/ui/card"
 import { Button } from "../ui/button"
-import { Plus, Search, Filter, ChevronDown, ChevronUp, User, Calendar, Stethoscope, FileText } from "lucide-react"
+import { Plus, Search, Filter, ChevronDown, ChevronUp, User, Calendar, Stethoscope, FileText, MessageSquare } from "lucide-react"
 import NewPatientModal from "./NewPatientModal"
+import PatientChatModal from "./PatientChatModal"
 
 type Diagnosis = {
   id: string
@@ -41,6 +42,9 @@ export default function PatientsPage() {
   const [expandedPatient, setExpandedPatient] = useState<string | null>(null)
   const [doctorList, setDoctorList] = useState<Array<{ id: string; name?: string; email?: string }>>([])
   const [newPatientOpen, setNewPatientOpen] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
+  const [chatPatientId, setChatPatientId] = useState<string | null>(null)
+  const [chatPatientName, setChatPatientName] = useState<string>("")
 
   const role = user?.role || 'doctor'
   type UserProfile = { organizationId?: string | null } | undefined
@@ -351,6 +355,12 @@ export default function PatientsPage() {
     setExpandedPatient(expandedPatient === patientId ? null : patientId)
   }
 
+  function openChat(patientId: string, patientName: string) {
+    setChatPatientId(patientId)
+    setChatPatientName(patientName)
+    setChatOpen(true)
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -527,18 +537,29 @@ export default function PatientsPage() {
                         }) : '—'}
                       </td>
                       <td className="px-4 py-3">
-                        {(patient.diagnosisCount || 0) > 0 && (
-                          <button
-                            onClick={() => toggleExpand(patient.id)}
-                            className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1"
+                        <div className="flex items-center gap-2">
+                          {(patient.diagnosisCount || 0) > 0 && (
+                            <button
+                              onClick={() => toggleExpand(patient.id)}
+                              className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1"
+                            >
+                              {expandedPatient === patient.id ? (
+                                <>Hide <ChevronUp className="h-4 w-4" /></>
+                              ) : (
+                                <>View <ChevronDown className="h-4 w-4" /></>
+                              )}
+                            </button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openChat(patient.id, patient.name || `Patient ${patient.id.slice(0, 8)}`)}
+                            className="flex items-center gap-1"
                           >
-                            {expandedPatient === patient.id ? (
-                              <>Hide <ChevronUp className="h-4 w-4" /></>
-                            ) : (
-                              <>View <ChevronDown className="h-4 w-4" /></>
-                            )}
-                          </button>
-                        )}
+                            <MessageSquare className="h-4 w-4" />
+                            Ask AI
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                     {expandedPatient === patient.id && patient.diagnosis && patient.diagnosis.length > 0 && (
@@ -617,6 +638,38 @@ export default function PatientsPage() {
           loadPatients()
         }}
       />
+
+      {/* Patient Chat Modal */}
+      <PatientChatModal
+        open={chatOpen}
+        onClose={() => {
+          setChatOpen(false)
+          setChatPatientId(null)
+          setChatPatientName("")
+        }}
+        patientId={chatPatientId}
+        patientName={chatPatientName}
+      />
+
+      {/* Floating Chat Button */}
+      {filteredPatients.length > 0 && (
+        <button
+          onClick={() => {
+            // Open chat for the first patient if none selected
+            if (filteredPatients.length > 0 && !chatPatientId) {
+              const firstPatient = filteredPatients[0]
+              openChat(firstPatient.id, firstPatient.name || `Patient ${firstPatient.id.slice(0, 8)}`)
+            } else {
+              setChatOpen(true)
+            }
+          }}
+          className="fixed bottom-6 right-6 bg-primary text-white p-4 rounded-full shadow-lg hover:bg-primary/90 transition-all hover:scale-110 z-40 flex items-center gap-2"
+          aria-label="Ask HealthSync AI"
+        >
+          <MessageSquare className="h-6 w-6" />
+          <span className="font-medium hidden sm:inline">Ask HealthSync AI</span>
+        </button>
+      )}
     </div>
   )
 }

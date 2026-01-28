@@ -18,6 +18,14 @@
   - Real-time patient assignment to doctors
   - Comprehensive diagnosis tracking with history
 
+- **AI-Powered Patient Health Assistant** 🆕
+  - Context-aware chat using Groq API
+  - Safe, educational health information
+  - Patient-specific diagnosis history integration
+  - Strict safety constraints (no diagnosis, prescriptions, or emergency advice)
+  - Built-in medical disclaimers
+  - Real-time responses for patient education
+
 - **Real-Time Collaboration**
   - Socket.IO powered live updates
   - Instant patient assignment notifications
@@ -56,7 +64,7 @@
     │   │   └── userStore.js                  # User CRUD operations and authentication helpers
     │   └── routes/
     │       ├── auth.js                       # Authentication endpoints (login, signup, /me, logout, password reset)
-    │       ├── groq.js                       # AI-powered disease information via Groq API + research papers via SerpaAI
+    │       ├── groq.js                       # AI-powered disease information via Groq API + research papers via SerpaAI + patient health assistant chat 🆕
     │       ├── icd11.js                      # WHO ICD-11 disease code search proxy
     │       ├── notifications.js              # User notification management system
     │       ├── organizations.js              # Organization management and doctor assignment
@@ -101,6 +109,7 @@
             │   │   ├── NotificationCenter.tsx       # Real-time notification dropdown
             │   │   ├── OrgDoctorsPanel.tsx          # Organization's doctor list with drag-drop assignment
             │   │   ├── PatientsPage.tsx             # Full patient list with search and filters
+            │   │   ├── PatientChatModal.tsx         # AI-powered patient health assistant chat 🆕
             │   │   ├── RecentDiagnosis.tsx          # Recent diagnoses widget for dashboard
             │   │   ├── RecentlyAssignedPanel.tsx    # Doctor's assigned patients panel
             │   │   ├── RecentPatients.tsx           # Recent patients widget with quick actions
@@ -245,6 +254,7 @@
 4. **Search Disease Information** using AI-powered insights
 5. **Access Research Papers** directly when searching any disease or condition
 6. **Track Patient History** and treatment progress
+7. **Chat with AI Assistant** for patient education and health information 🆕
 
 
 ## 🔌 API Endpoints
@@ -292,6 +302,7 @@
 |--------|----------|-------------|---------------|
 | `POST` | `/api/groq/disease-info` | Get AI-powered disease info + research papers via SerpaAI | ✅ |
 | `POST` | `/api/groq/diagnosis-summary` | Generate comprehensive diagnosis summary | ✅ |
+| `POST` | `/api/groq/patient-chat` | Chat with AI health assistant (context-aware, safe) 🆕 | ✅ |
 
 ### Notifications
 
