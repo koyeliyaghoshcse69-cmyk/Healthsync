@@ -1,5 +1,15 @@
 const express = require('express')
+const jwt = require('jsonwebtoken')
+const getDb = require('../lib/mongo')
+const { ObjectId } = require('mongodb')
 const router = express.Router()
+const JWT_SECRET = process.env.JWT_SECRET || 'change-this-secret'
+
+function getTokenFromReq(req) {
+  const auth = req.get('authorization')
+  if (auth && auth.startsWith('Bearer ')) return auth.split(' ')[1]
+  return null
+}
 
 router.post('/disease-info', async (req, res) => {
   try {
@@ -133,6 +143,158 @@ router.post('/research-papers', async (req, res) => {
   } catch (err) {
     console.error('Research papers API error:', err)
     return res.status(500).json({ error: 'Failed to fetch research papers' })
+  }
+})
+
+router.post('/patient-chat', async (req, res) => {
+  try {
+    // Authentication
+    const token = getTokenFromReq(req)
+    if (!token) return res.status(401).json({ error: 'Missing authentication token' })
+    
+    let userData
+    try {
+      userData = jwt.verify(token, JWT_SECRET)
+    } catch (err) {
+      return res.status(401).json({ error: 'Invalid authentication token' })
+    }
+
+    const { patientId, question } = req.body
+
+    // Input validation
+    if (!patientId) {
+      return res.status(400).json({ error: 'Patient ID is required' })
+    }
+    
+    if (!question || typeof question !== 'string' || question.trim().length === 0) {
+      return res.status(400).json({ error: 'Question is required' })
+    }
+
+    if (question.trim().length > 1000) {
+      return res.status(400).json({ error: 'Question is too long (max 1000 characters)' })
+    }
+
+    const GROQ_API_KEY = process.env.GROQ_API_KEY
+    if (!GROQ_API_KEY) {
+      return res.status(500).json({ error: 'AI service not configured' })
+    }
+
+    // Fetch patient context
+    const db = await getDb()
+    if (!db) {
+      return res.status(503).json({ error: 'Database unavailable' })
+    }
+
+    const patient = await db.collection('patients').findOne({ _id: new ObjectId(patientId) })
+    if (!patient) {
+      return res.status(404).json({ error: 'Patient not found' })
+    }
+
+    // Verify user has access to this patient (must be creator or diagnoser)
+    const userId = userData.id || userData.email
+    const isCreator = patient.createdBy === userId
+    const hasDiagnosis = Array.isArray(patient.diagnosis) && 
+                        patient.diagnosis.some(d => d.createdBy === userId)
+    
+    if (!isCreator && !hasDiagnosis) {
+      return res.status(403).json({ error: 'Access denied to this patient' })
+    }
+
+    // Build patient context
+    const patientAge = patient.age ? `${patient.age} years old` : 'age not specified'
+    const diagnoses = Array.isArray(patient.diagnosis) && patient.diagnosis.length > 0
+      ? patient.diagnosis.map(d => {
+          const parts = []
+          if (d.disease) parts.push(d.disease)
+          if (d.icd11) parts.push(`(ICD-11: ${d.icd11})`)
+          if (d.notes) parts.push(`- ${d.notes}`)
+          return parts.join(' ')
+        }).join('\n')
+      : 'No diagnoses recorded'
+
+    // Construct safety-first system prompt
+    const systemPrompt = `You are HealthSync AI, a medical education assistant for healthcare professionals.
+
+CRITICAL SAFETY CONSTRAINTS - YOU MUST NEVER:
+- Diagnose any medical condition
+- Prescribe medication, dosages, or treatment plans
+- Provide emergency medical advice
+- Suggest specific medical procedures
+- Replace professional medical judgment
+
+YOUR ROLE IS ONLY TO:
+- Explain medical concepts in simple terms
+- Summarize patient history information
+- Provide general health education
+- Answer questions about existing diagnoses
+- Guide users to appropriate resources
+
+PATIENT CONTEXT:
+Age: ${patientAge}
+Existing Diagnoses: ${diagnoses}
+
+RESPONSE GUIDELINES:
+1. If asked to diagnose: Refuse politely and advise consulting a doctor
+2. If asked about prescriptions: Refuse and say only licensed providers can prescribe
+3. If emergency situation described: Immediately advise calling emergency services
+4. If uncertain: Say "I don't know" and advise consulting a healthcare professional
+5. Keep responses clear, concise, and under 300 words
+6. Always be empathetic and professional
+7. Focus on education and explanation, not diagnosis or treatment
+
+Remember: You are an educational tool, not a replacement for medical professionals.`
+
+    const userPrompt = question.trim()
+
+    // Call Groq API
+    const response = await fetch(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${GROQ_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt
+            },
+            {
+              role: 'user',
+              content: userPrompt
+            }
+          ],
+          temperature: 0.3,
+          max_tokens: 500,
+          top_p: 0.9
+        })
+      }
+    )
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Groq API error:', errorText)
+      return res.status(response.status).json({ error: 'AI service temporarily unavailable' })
+    }
+
+    const data = await response.json()
+    const answer = data.choices?.[0]?.message?.content || 'I apologize, but I was unable to generate a response. Please try again.'
+
+    // Medical disclaimer
+    const disclaimer = '⚠️ MEDICAL DISCLAIMER: This information is for educational purposes only and does not constitute medical advice, diagnosis, or treatment. Always consult with qualified healthcare professionals for medical decisions.'
+
+    return res.json({ 
+      success: true,
+      answer: answer.trim(),
+      disclaimer
+    })
+
+  } catch (err) {
+    console.error('Patient chat API error:', err)
+    return res.status(500).json({ error: 'Failed to process chat request' })
   }
 })
 
