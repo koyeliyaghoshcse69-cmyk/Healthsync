@@ -146,6 +146,8 @@ router.post('/research-papers', async (req, res) => {
   }
 })
 
+// TODO: Add rate limiting middleware for production (e.g., express-rate-limit)
+// Recommended: 10 requests per minute per user to prevent API abuse
 router.post('/patient-chat', async (req, res) => {
   try {
     // Authentication
