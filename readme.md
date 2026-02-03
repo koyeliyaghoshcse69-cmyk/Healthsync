@@ -4,6 +4,15 @@
 
 **HealthSync** is a comprehensive Electronic Medical Records (EMR) platform that revolutionizes healthcare management by seamlessly integrating ICD-11 disease classification, real-time collaboration, AI-powered medical insights, and instant access to relevant research papers. Built for organizations and healthcare professionals who demand precision, efficiency, and innovation.
 
+## 📚 Documentation
+
+- **[✅ Integration Complete](COMPLETED-INTEGRATION.md)** - Summary of completed authentication integration
+- **[Quick Start Guide](QUICKSTART.md)** - Get started in 5 minutes
+- **[Setup Guide](SETUP.md)** - Comprehensive setup and deployment instructions
+- **[Authentication Guide](AUTH.md)** - Complete authentication system documentation
+- **[Integration Checklist](INTEGRATION-CHECKLIST.md)** - Verification checklist for frontend-backend connections
+- **Test Script** - Run `./test-auth.sh` to verify backend authentication
+
 
 ## ✨ Features
 
